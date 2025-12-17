@@ -252,21 +252,53 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
-// Resize canvas for crisp signature
+// -------------------------------
+// SIGNATURE PAD SETUP
+// -------------------------------
 const canvas = document.getElementById("signature-pad");
-function resizeCanvas() {
+let signaturePad;
+
+function initSignaturePad() {
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
     const rect = canvas.getBoundingClientRect();
+
     canvas.width = rect.width * ratio;
     canvas.height = rect.height * ratio;
-    canvas.getContext("2d").scale(ratio, ratio);
+
+    const ctx = canvas.getContext("2d");
+    ctx.scale(ratio, ratio);
+
+    signaturePad = new SignaturePad(canvas, {
+        backgroundColor: "rgba(255,255,255,0)",
+        penColor: "black"
+    });
 }
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
 
-const signaturePad = new SignaturePad(canvas);
+window.addEventListener("load", initSignaturePad);
+window.addEventListener("resize", initSignaturePad);
 
-// Generate PDF
+// -------------------------------
+// CLEAR SIGNATURE BUTTON
+// -------------------------------
+const clearBtn = document.createElement("button");
+clearBtn.textContent = "Clear Signature";
+clearBtn.type = "button";
+clearBtn.style.marginTop = "10px";
+clearBtn.style.padding = "8px 14px";
+clearBtn.style.borderRadius = "6px";
+clearBtn.style.border = "1px solid #ccc";
+clearBtn.style.cursor = "pointer";
+clearBtn.style.background = "#f3f4f6";
+
+canvas.parentNode.appendChild(clearBtn);
+
+clearBtn.addEventListener("click", () => {
+    signaturePad.clear();
+});
+
+// -------------------------------
+// PDF GENERATION
+// -------------------------------
 async function generatePdf(formData) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -282,13 +314,14 @@ async function generatePdf(formData) {
     function addLine(label, value) {
         doc.text(`${label}: ${value || ""}`, 40, y);
         y += 18;
+
         if (y > 780) {
             doc.addPage();
             y = 40;
         }
     }
 
-    // Product Details
+    // PRODUCT DETAILS
     addLine("Product Name", formData.product_name);
     addLine("Brand Name", formData.brand_name);
     addLine("Product Category", formData.product_category);
@@ -297,12 +330,12 @@ async function generatePdf(formData) {
     addLine("Search Terms / Keywords", formData.search_terms);
     addLine("Model Number / Style Name", formData.model_number);
 
-    // Variations
+    // VARIATIONS
     addLine("Has Variations", formData.has_variations);
     addLine("Variation Options", formData.variation_options);
     addLine("Parent/Child Structure", formData.parent_child_structure);
 
-    // Pricing & Inventory
+    // PRICING & INVENTORY
     addLine("MSRP", formData.msrp);
     addLine("MAP", formData.map);
     addLine("Cost of Goods", formData.cogs);
@@ -310,23 +343,23 @@ async function generatePdf(formData) {
     addLine("Fulfillment Method", formData.fulfillment_method);
     addLine("Country of Origin", formData.country_of_origin);
 
-    // Identifiers
+    // IDENTIFIERS
     addLine("UPC / EAN / GTIN", formData.upc_ean_gtin);
     addLine("ASIN", formData.asin);
     addLine("SKU", formData.sku);
 
-    // Compliance & Safety
+    // COMPLIANCE
     addLine("Shelf Life", formData.shelf_life);
     addLine("Hazardous Materials Info", formData.hazmat_info);
 
-    // Logistics & Packaging
+    // LOGISTICS
     addLine("Product Dimensions", formData.product_dimensions);
     addLine("Product Weight", formData.product_weight);
     addLine("Packaging Dimensions", formData.packaging_dimensions);
     addLine("Units Per Case", formData.units_per_case);
     addLine("Prep / Labeling Requirements", formData.prep_requirements);
 
-    // Signature
+    // SIGNATURE
     addLine("Signer Name", formData.signer_name);
 
     if (!signaturePad.isEmpty()) {
@@ -340,19 +373,27 @@ async function generatePdf(formData) {
     return doc;
 }
 
-// Handle form submission
+// -------------------------------
+// FORM SUBMISSION
+// -------------------------------
 document.getElementById("mv-form").addEventListener("submit", async function (e) {
     e.preventDefault();
+
     const statusEl = document.getElementById("status");
     statusEl.textContent = "Generating PDF...";
 
     const formData = Object.fromEntries(new FormData(e.target).entries());
-    const pdf = await generatePdf(formData);
 
-    pdf.save("MarketVendr_Amazon_Product_Listing.pdf");
+    try {
+        const pdf = await generatePdf(formData);
+        pdf.save("MarketVendr_Amazon_Product_Listing.pdf");
 
-    statusEl.textContent = "Form submitted successfully.";
-    statusEl.className = "status-message status-success";
+        statusEl.textContent = "Form submitted successfully.";
+        statusEl.className = "status-message status-success";
+    } catch (err) {
+        statusEl.textContent = "Error generating PDF.";
+        console.error(err);
+    }
 });
 </script>
 
