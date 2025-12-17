@@ -252,6 +252,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
+// Resize canvas for crisp signature
 const canvas = document.getElementById("signature-pad");
 function resizeCanvas() {
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
@@ -265,6 +266,7 @@ resizeCanvas();
 
 const signaturePad = new SignaturePad(canvas);
 
+// Generate PDF
 async function generatePdf(formData) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -275,12 +277,84 @@ async function generatePdf(formData) {
     logo.src = "logo.png";
     await new Promise(res => logo.onload = res);
     doc.addImage(logo, "PNG", 200, 20, 180, 60);
-    y = 100;
+    y = 110;
 
     function addLine(label, value) {
         doc.text(`${label}: ${value || ""}`, 40, y);
-        y += 16;
+        y += 18;
+        if (y > 780) {
+            doc.addPage();
+            y = 40;
+        }
     }
 
+    // Product Details
     addLine("Product Name", formData.product_name);
-    add
+    addLine("Brand Name", formData.brand_name);
+    addLine("Product Category", formData.product_category);
+    addLine("Product Description", formData.product_description);
+    addLine("Key Product Features", formData.key_features);
+    addLine("Search Terms / Keywords", formData.search_terms);
+    addLine("Model Number / Style Name", formData.model_number);
+
+    // Variations
+    addLine("Has Variations", formData.has_variations);
+    addLine("Variation Options", formData.variation_options);
+    addLine("Parent/Child Structure", formData.parent_child_structure);
+
+    // Pricing & Inventory
+    addLine("MSRP", formData.msrp);
+    addLine("MAP", formData.map);
+    addLine("Cost of Goods", formData.cogs);
+    addLine("Initial Inventory", formData.initial_inventory);
+    addLine("Fulfillment Method", formData.fulfillment_method);
+    addLine("Country of Origin", formData.country_of_origin);
+
+    // Identifiers
+    addLine("UPC / EAN / GTIN", formData.upc_ean_gtin);
+    addLine("ASIN", formData.asin);
+    addLine("SKU", formData.sku);
+
+    // Compliance & Safety
+    addLine("Shelf Life", formData.shelf_life);
+    addLine("Hazardous Materials Info", formData.hazmat_info);
+
+    // Logistics & Packaging
+    addLine("Product Dimensions", formData.product_dimensions);
+    addLine("Product Weight", formData.product_weight);
+    addLine("Packaging Dimensions", formData.packaging_dimensions);
+    addLine("Units Per Case", formData.units_per_case);
+    addLine("Prep / Labeling Requirements", formData.prep_requirements);
+
+    // Signature
+    addLine("Signer Name", formData.signer_name);
+
+    if (!signaturePad.isEmpty()) {
+        const sig = signaturePad.toDataURL();
+        doc.addImage(sig, "PNG", 40, y + 10, 200, 80);
+        y += 100;
+    } else {
+        addLine("Signature", "(not provided)");
+    }
+
+    return doc;
+}
+
+// Handle form submission
+document.getElementById("mv-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const statusEl = document.getElementById("status");
+    statusEl.textContent = "Generating PDF...";
+
+    const formData = Object.fromEntries(new FormData(e.target).entries());
+    const pdf = await generatePdf(formData);
+
+    pdf.save("MarketVendr_Amazon_Product_Listing.pdf");
+
+    statusEl.textContent = "Form submitted successfully.";
+    statusEl.className = "status-message status-success";
+});
+</script>
+
+</body>
+</html>
