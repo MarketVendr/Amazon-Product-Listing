@@ -113,9 +113,7 @@
         color: #16a34a;
     }
 </style>
-</head>
-
-<body>
+    <body>
 <div class="page-wrapper">
     <div class="card">
 
@@ -238,7 +236,7 @@
             <label>Signer Full Name</label>
             <input type="text" name="signer_name">
 
-            <!-- Clear Signature Button (above box) -->
+            <!-- Clear Signature Button -->
             <div style="text-align: right; margin-top: 10px;">
                 <button type="button" id="clear-signature" style="
                     background-color: #f97316;
@@ -266,14 +264,13 @@
         </form>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
 let signaturePad;
 
-// initialize signature pad with proper scaling
+// Initialize signature pad
 function initSignaturePad() {
     const canvas = document.getElementById("signature-pad");
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
@@ -292,38 +289,56 @@ function initSignaturePad() {
 }
 
 window.addEventListener("load", initSignaturePad);
-window.addEventListener("resize", () => {
-    // re-init on resize; signature will be cleared, but pad stays functional
-    initSignaturePad();
-});
+window.addEventListener("resize", initSignaturePad);
 
-// clear signature button
+// Clear signature button
 document.getElementById("clear-signature").addEventListener("click", () => {
     if (signaturePad) signaturePad.clear();
 });
 
-// helper: wrapped text with page breaks
-function addWrappedText(doc, label, value, startY) {
+// Write wrapped text with page breaks
+function writeWrapped(doc, label, value, y) {
     const pageHeight = doc.internal.pageSize.getHeight();
-    const pageWidth  = doc.internal.pageSize.getWidth();
     const margin = 40;
-    const maxWidth = pageWidth - margin * 2;
+    const maxWidth = doc.internal.pageSize.getWidth() - margin * 2;
 
     const text = `${label}: ${value || ""}`;
     const lines = doc.splitTextToSize(text, maxWidth);
 
-    let y = startY;
+    // Page break BEFORE writing
+    if (y + lines.length * 16 > pageHeight - 40) {
+        doc.addPage();
+        y = 40;
+    }
 
     lines.forEach(line => {
+        doc.text(line, margin, y);
+        y += 16;
+
         if (y > pageHeight - 40) {
             doc.addPage();
             y = 40;
         }
-        doc.text(line, margin, y);
-        y += 18;
     });
 
-    return y;
+    return y + 6;
+}
+
+// Section header
+function addSectionHeader(doc, title, y) {
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 40;
+
+    if (y + 40 > pageHeight - 40) {
+        doc.addPage();
+        y = 40;
+    }
+
+    doc.setFont(undefined, "bold");
+    doc.text(`--- ${title.toUpperCase()} ---`, margin, y);
+    doc.setFont(undefined, "normal");
+
+    return y + 24;
 }
 
 async function generatePdf(formData) {
@@ -333,7 +348,7 @@ async function generatePdf(formData) {
     const pageHeight = doc.internal.pageSize.getHeight();
     let y = 40;
 
-    // logo
+    // Logo
     const logo = new Image();
     logo.src = "logo.png";
     await new Promise(res => logo.onload = res);
@@ -341,11 +356,11 @@ async function generatePdf(formData) {
     y = 110;
 
     const add = (label, value) => {
-        y = addWrappedText(doc, label, value, y);
-        y += 6; // extra spacing between fields
+        y = writeWrapped(doc, label, value, y);
     };
 
     // PRODUCT DETAILS
+    y = addSectionHeader(doc, "Product Details", y);
     add("Product Name", formData.product_name);
     add("Brand Name", formData.brand_name);
     add("Product Category", formData.product_category);
@@ -355,11 +370,13 @@ async function generatePdf(formData) {
     add("Model Number / Style Name", formData.model_number);
 
     // VARIATIONS
+    y = addSectionHeader(doc, "Variations", y);
     add("Has Variations", formData.has_variations);
     add("Variation Options", formData.variation_options);
     add("Parent/Child Structure", formData.parent_child_structure);
 
     // PRICING & INVENTORY
+    y = addSectionHeader(doc, "Pricing & Inventory", y);
     add("MSRP", formData.msrp);
     add("MAP", formData.map);
     add("Cost of Goods", formData.cogs);
@@ -368,15 +385,18 @@ async function generatePdf(formData) {
     add("Country of Origin", formData.country_of_origin);
 
     // IDENTIFIERS
+    y = addSectionHeader(doc, "Product Identifiers", y);
     add("UPC / EAN / GTIN", formData.upc_ean_gtin);
     add("ASIN", formData.asin);
     add("SKU", formData.sku);
 
     // COMPLIANCE
+    y = addSectionHeader(doc, "Compliance & Safety", y);
     add("Shelf Life", formData.shelf_life);
     add("Hazardous Materials Info", formData.hazmat_info);
 
     // LOGISTICS
+    y = addSectionHeader(doc, "Logistics & Packaging", y);
     add("Product Dimensions", formData.product_dimensions);
     add("Product Weight", formData.product_weight);
     add("Packaging Dimensions", formData.packaging_dimensions);
@@ -384,14 +404,17 @@ async function generatePdf(formData) {
     add("Prep / Labeling Requirements", formData.prep_requirements);
 
     // SIGNATURE
+    y = addSectionHeader(doc, "E‑Signature", y);
     add("Signer Name", formData.signer_name);
 
     if (!signaturePad.isEmpty()) {
         const sig = signaturePad.toDataURL();
-        if (y > pageHeight - 140) {
+
+        if (y + 120 > pageHeight - 40) {
             doc.addPage();
             y = 40;
         }
+
         doc.text("Signature:", 40, y);
         doc.addImage(sig, "PNG", 40, y + 10, 200, 80);
     } else {
@@ -401,7 +424,7 @@ async function generatePdf(formData) {
     return doc;
 }
 
-// form submission
+// Form submission
 document.getElementById("mv-form").addEventListener("submit", async function (e) {
     e.preventDefault();
 
@@ -424,4 +447,5 @@ document.getElementById("mv-form").addEventListener("submit", async function (e)
 </script>
 
 </body>
-</html>
+</html>   
+</head>
