@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Market Vendr – Amazon Product Listing Setup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+    :root {
+        --mv-primary: #111827;
+        --mv-accent:  #f97316;
+        --mv-bg:      #f3f4f6;
+        --mv-border:  #d1d5db;
+    }
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: var(--mv-bg);
+        color: #111827;
+    }
+    .page-wrapper {
+        max-width: 1000px;
+        margin: 30px auto;
+        padding: 0 15px 40px;
+    }
+    .card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        padding: 30px 25px 35px;
+    }
+    .logo-container {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .logo-container img {
+        width: 180px;
+        height: auto;
+    }
+    h2 {
+        margin-top: 25px;
+        padding-top: 10px;
+        border-top: 1px solid var(--mv-border);
+        font-size: 18px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--mv-primary);
+    }
+    label {
+        font-weight: bold;
+        display: block;
+        margin-top: 12px;
+        font-size: 14px;
+    }
+    input[type="text"],
+    textarea {
+        width: 100%;
+        padding: 9px 11px;
+        margin-top: 4px;
+        border-radius: 6px;
+        border: 1px solid var(--mv-border);
+        font-size: 14px;
+        background: #f9fafb;
+    }
+    textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+    .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+    @media (max-width: 768px) {
+        .two-col {
+            grid-template-columns: 1fr;
+        }
+    }
+    .signature-box {
+        border: 2px dashed var(--mv-border);
+        border-radius: 8px;
+        background: #f9fafb;
+        height: 160px;
+        margin-top: 10px;
+    }
+    #signature-pad {
+        width: 100%;
+        height: 100%;
+        display: block;
+        cursor: crosshair;
+    }
+    .btn {
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 20px;
+    }
+    .btn-primary {
+        background: var(--mv-primary);
+        color: #ffffff;
+    }
+    .status-message {
+        margin-top: 15px;
+        font-size: 13px;
+        text-align: center;
+    }
+    .status-success {
+        color: #16a34a;
+    }
+</style>
+</head>
+
+<body>
+<div class="page-wrapper">
+    <div class="card">
+
+        <div class="logo-container">
+            <img src="logo.png" alt="MarketVendr Logo">
+        </div>
+
+        <form id="mv-form">
+
+            <h2>Product Details</h2>
+            <label>Product Name / Title</label>
+            <input type="text" name="product_name">
+
+            <label>Brand Name</label>
+            <input type="text" name="brand_name">
+
+            <label>Product Category</label>
+            <input type="text" name="product_category">
+
+            <label>Product Description</label>
+            <textarea name="product_description"></textarea>
+
+            <label>Key Product Features</label>
+            <textarea name="key_features"></textarea>
+
+            <label>Search Terms / Keywords</label>
+            <textarea name="search_terms"></textarea>
+
+            <label>Model Number or Style Name</label>
+            <input type="text" name="model_number">
+
+            <h2>Variations</h2>
+            <label>Does this product have variations?</label>
+            <input type="text" name="has_variations">
+
+            <label>List all variation options</label>
+            <textarea name="variation_options"></textarea>
+
+            <label>Parent / Child structure details</label>
+            <textarea name="parent_child_structure"></textarea>
+
+            <h2>Pricing & Inventory</h2>
+            <div class="two-col">
+                <div>
+                    <label>Retail Price (MSRP)</label>
+                    <input type="text" name="msrp">
+                </div>
+                <div>
+                    <label>Minimum Advertised Price (MAP)</label>
+                    <input type="text" name="map">
+                </div>
+            </div>
+
+            <div class="two-col">
+                <div>
+                    <label>Cost of Goods</label>
+                    <input type="text" name="cogs">
+                </div>
+                <div>
+                    <label>Initial Available Inventory Quantity</label>
+                    <input type="text" name="initial_inventory">
+                </div>
+            </div>
+
+            <div class="two-col">
+                <div>
+                    <label>Fulfillment Method (FBA or FBM)</label>
+                    <input type="text" name="fulfillment_method">
+                </div>
+                <div>
+                    <label>Country of Origin</label>
+                    <input type="text" name="country_of_origin">
+                </div>
+            </div>
+
+            <h2>Product Identifiers</h2>
+            <label>UPC / EAN / GTIN</label>
+            <input type="text" name="upc_ean_gtin">
+
+            <label>ASIN</label>
+            <input type="text" name="asin">
+
+            <label>SKU</label>
+            <input type="text" name="sku">
+
+            <h2>Compliance & Safety</h2>
+            <label>Expiration Date or Shelf Life</label>
+            <input type="text" name="shelf_life">
+
+            <label>Hazardous Materials Information</label>
+            <textarea name="hazmat_info"></textarea>
+
+            <h2>Logistics & Packaging</h2>
+            <div class="two-col">
+                <div>
+                    <label>Product Dimensions</label>
+                    <input type="text" name="product_dimensions">
+                </div>
+                <div>
+                    <label>Product Weight</label>
+                    <input type="text" name="product_weight">
+                </div>
+            </div>
+
+            <div class="two-col">
+                <div>
+                    <label>Packaging Dimensions</label>
+                    <input type="text" name="packaging_dimensions">
+                </div>
+                <div>
+                    <label>Units Per Case</label>
+                    <input type="text" name="units_per_case">
+                </div>
+            </div>
+
+            <label>Prep or Labeling Requirements</label>
+            <textarea name="prep_requirements"></textarea>
+
+            <h2>E‑Signature</h2>
+            <label>Signer Full Name</label>
+            <input type="text" name="signer_name">
+
+            <div class="signature-box">
+                <canvas id="signature-pad"></canvas>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Submit & Download PDF</button>
+
+            <div id="status" class="status-message"></div>
+
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<script>
+const canvas = document.getElementById("signature-pad");
+function resizeCanvas() {
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * ratio;
+    canvas.height = rect.height * ratio;
+    canvas.getContext("2d").scale(ratio, ratio);
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+const signaturePad = new SignaturePad(canvas);
+
+async function generatePdf(formData) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    let y = 40;
+
+    // Add logo
+    const logo = new Image();
+    logo.src = "logo.png";
+    await new Promise(res => logo.onload = res);
+    doc.addImage(logo, "PNG", 200, 20, 180, 60);
+    y = 100;
+
+    function addLine(text) {
+        doc.text(String(text || ""), 40, y);
+        y += 16;
+    }
+
+    addLine("Product Name: " + formData.product_name);
+    addLine("Brand Name: " + formData.brand_name);
+    addLine("Category: " + formData.product_category);
+    addLine("Description: " + formData.product_description);
+    addLine("Key Features: " + formData.key_features);
+    addLine("Search Terms: " + formData.search_terms);
+    addLine("Model Number: " + formData.model_number);
+
+    addLine("Variations: " + formData.has_variations);
+    addLine("Variation Options: " + formData.variation_options);
+    addLine("Parent/Child Structure: " + formData.parent_child_structure);
+
+    addLine("MSRP: " + formData.msrp);
+    addLine("MAP: " + formData.map);
+    addLine("COGS: " + formData.cogs);
+    addLine("Initial Inventory: " + formData.initial_inventory);
+    addLine("Fulfillment Method: " + formData.fulfillment_method);
+    addLine("Country of Origin: " + formData.country_of_origin);
+
+    addLine("UPC/EAN/GTIN: " + formData.upc_ean_gtin);
+    addLine("ASIN: " + formData.asin);
+    addLine("SKU: " + formData.sku);
+
+    addLine("Shelf Life: " + formData.shelf_life);
+    addLine("Hazmat Info: " + formData.hazmat_info);
+
+    addLine("Product Dimensions: " + formData.product_dimensions);
+    addLine("Product Weight: " + formData.product_weight);
+    addLine("Packaging Dimensions: " + formData.packaging_dimensions);
+    addLine("Units Per Case: " + formData.units_per_case);
+    addLine("Prep Requirements: " + formData.prep_requirements);
+
+    addLine("Signer Name: " + formData.signer_name);
+
+    if (!signaturePad.isEmpty()) {
+        const sig = signaturePad.toDataURL();
+        doc.addImage(sig, "PNG", 40, y + 10, 200, 80);
+    }
+
+    return doc;
+}
+
+document.getElementById("mv-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const statusEl = document.getElementById("status");
+    statusEl.textContent = "Generating PDF...";
+
+    const formData = Object.fromEntries(new FormData(e.target).entries());
+    const pdf = await generatePdf(formData);
+
+    pdf.save("MarketVendr_Amazon_Product_Listing.pdf");
+
+    statusEl.textContent = "Form submitted successfully.";
+    statusEl.className = "status-message status-success";
+});
+</script>
+
+</body>
+</html>
