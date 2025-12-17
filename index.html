@@ -114,6 +114,7 @@
     }
 </style>
 </head>
+
 <body>
 <div class="page-wrapper">
     <div class="card">
@@ -237,6 +238,23 @@
             <label>Signer Full Name</label>
             <input type="text" name="signer_name">
 
+            <!-- Clear Signature Button (above box) -->
+            <div style="text-align: right; margin-top: 10px;">
+                <button type="button" id="clear-signature" style="
+                    background-color: #f97316;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-weight: bold;
+                    font-size: 13px;
+                    cursor: pointer;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                ">
+                    ✕ Clear Signature
+                </button>
+            </div>
+
             <div class="signature-box">
                 <canvas id="signature-pad"></canvas>
             </div>
@@ -248,17 +266,16 @@
         </form>
     </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
-// -------------------------------
-// SIGNATURE PAD SETUP
-// -------------------------------
-const canvas = document.getElementById("signature-pad");
 let signaturePad;
 
+// initialize signature pad with proper scaling
 function initSignaturePad() {
+    const canvas = document.getElementById("signature-pad");
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
     const rect = canvas.getBoundingClientRect();
 
@@ -275,107 +292,116 @@ function initSignaturePad() {
 }
 
 window.addEventListener("load", initSignaturePad);
-window.addEventListener("resize", initSignaturePad);
-
-// -------------------------------
-// CLEAR SIGNATURE BUTTON
-// -------------------------------
-const clearBtn = document.createElement("button");
-clearBtn.textContent = "Clear Signature";
-clearBtn.type = "button";
-clearBtn.style.marginTop = "10px";
-clearBtn.style.padding = "8px 14px";
-clearBtn.style.borderRadius = "6px";
-clearBtn.style.border = "1px solid #ccc";
-clearBtn.style.cursor = "pointer";
-clearBtn.style.background = "#f3f4f6";
-
-canvas.parentNode.appendChild(clearBtn);
-
-clearBtn.addEventListener("click", () => {
-    signaturePad.clear();
+window.addEventListener("resize", () => {
+    // re-init on resize; signature will be cleared, but pad stays functional
+    initSignaturePad();
 });
 
-// -------------------------------
-// PDF GENERATION
-// -------------------------------
+// clear signature button
+document.getElementById("clear-signature").addEventListener("click", () => {
+    if (signaturePad) signaturePad.clear();
+});
+
+// helper: wrapped text with page breaks
+function addWrappedText(doc, label, value, startY) {
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const pageWidth  = doc.internal.pageSize.getWidth();
+    const margin = 40;
+    const maxWidth = pageWidth - margin * 2;
+
+    const text = `${label}: ${value || ""}`;
+    const lines = doc.splitTextToSize(text, maxWidth);
+
+    let y = startY;
+
+    lines.forEach(line => {
+        if (y > pageHeight - 40) {
+            doc.addPage();
+            y = 40;
+        }
+        doc.text(line, margin, y);
+        y += 18;
+    });
+
+    return y;
+}
+
 async function generatePdf(formData) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+    const pageHeight = doc.internal.pageSize.getHeight();
     let y = 40;
 
-    // Add logo
+    // logo
     const logo = new Image();
     logo.src = "logo.png";
     await new Promise(res => logo.onload = res);
     doc.addImage(logo, "PNG", 200, 20, 180, 60);
     y = 110;
 
-    function addLine(label, value) {
-        doc.text(`${label}: ${value || ""}`, 40, y);
-        y += 18;
-
-        if (y > 780) {
-            doc.addPage();
-            y = 40;
-        }
-    }
+    const add = (label, value) => {
+        y = addWrappedText(doc, label, value, y);
+        y += 6; // extra spacing between fields
+    };
 
     // PRODUCT DETAILS
-    addLine("Product Name", formData.product_name);
-    addLine("Brand Name", formData.brand_name);
-    addLine("Product Category", formData.product_category);
-    addLine("Product Description", formData.product_description);
-    addLine("Key Product Features", formData.key_features);
-    addLine("Search Terms / Keywords", formData.search_terms);
-    addLine("Model Number / Style Name", formData.model_number);
+    add("Product Name", formData.product_name);
+    add("Brand Name", formData.brand_name);
+    add("Product Category", formData.product_category);
+    add("Product Description", formData.product_description);
+    add("Key Product Features", formData.key_features);
+    add("Search Terms / Keywords", formData.search_terms);
+    add("Model Number / Style Name", formData.model_number);
 
     // VARIATIONS
-    addLine("Has Variations", formData.has_variations);
-    addLine("Variation Options", formData.variation_options);
-    addLine("Parent/Child Structure", formData.parent_child_structure);
+    add("Has Variations", formData.has_variations);
+    add("Variation Options", formData.variation_options);
+    add("Parent/Child Structure", formData.parent_child_structure);
 
     // PRICING & INVENTORY
-    addLine("MSRP", formData.msrp);
-    addLine("MAP", formData.map);
-    addLine("Cost of Goods", formData.cogs);
-    addLine("Initial Inventory", formData.initial_inventory);
-    addLine("Fulfillment Method", formData.fulfillment_method);
-    addLine("Country of Origin", formData.country_of_origin);
+    add("MSRP", formData.msrp);
+    add("MAP", formData.map);
+    add("Cost of Goods", formData.cogs);
+    add("Initial Inventory", formData.initial_inventory);
+    add("Fulfillment Method", formData.fulfillment_method);
+    add("Country of Origin", formData.country_of_origin);
 
     // IDENTIFIERS
-    addLine("UPC / EAN / GTIN", formData.upc_ean_gtin);
-    addLine("ASIN", formData.asin);
-    addLine("SKU", formData.sku);
+    add("UPC / EAN / GTIN", formData.upc_ean_gtin);
+    add("ASIN", formData.asin);
+    add("SKU", formData.sku);
 
     // COMPLIANCE
-    addLine("Shelf Life", formData.shelf_life);
-    addLine("Hazardous Materials Info", formData.hazmat_info);
+    add("Shelf Life", formData.shelf_life);
+    add("Hazardous Materials Info", formData.hazmat_info);
 
     // LOGISTICS
-    addLine("Product Dimensions", formData.product_dimensions);
-    addLine("Product Weight", formData.product_weight);
-    addLine("Packaging Dimensions", formData.packaging_dimensions);
-    addLine("Units Per Case", formData.units_per_case);
-    addLine("Prep / Labeling Requirements", formData.prep_requirements);
+    add("Product Dimensions", formData.product_dimensions);
+    add("Product Weight", formData.product_weight);
+    add("Packaging Dimensions", formData.packaging_dimensions);
+    add("Units Per Case", formData.units_per_case);
+    add("Prep / Labeling Requirements", formData.prep_requirements);
 
     // SIGNATURE
-    addLine("Signer Name", formData.signer_name);
+    add("Signer Name", formData.signer_name);
 
     if (!signaturePad.isEmpty()) {
         const sig = signaturePad.toDataURL();
+        if (y > pageHeight - 140) {
+            doc.addPage();
+            y = 40;
+        }
+        doc.text("Signature:", 40, y);
         doc.addImage(sig, "PNG", 40, y + 10, 200, 80);
-        y += 100;
     } else {
-        addLine("Signature", "(not provided)");
+        add("Signature", "(not provided)");
     }
 
     return doc;
 }
 
-// -------------------------------
-// FORM SUBMISSION
-// -------------------------------
+// form submission
 document.getElementById("mv-form").addEventListener("submit", async function (e) {
     e.preventDefault();
 
@@ -391,8 +417,8 @@ document.getElementById("mv-form").addEventListener("submit", async function (e)
         statusEl.textContent = "Form submitted successfully.";
         statusEl.className = "status-message status-success";
     } catch (err) {
-        statusEl.textContent = "Error generating PDF.";
         console.error(err);
+        statusEl.textContent = "Error generating PDF.";
     }
 });
 </script>
